@@ -1,0 +1,16 @@
+# Compiled programs and objects
+/time
+/time_shm
+/time_pipe
+*.o
+*.out
+*.exe
+
+# Editor and OS files
+.vscode/
+.idea/
+*~
+.DS_Store
+Thumbs.db
+
+# Keep required *_output.txt files tracked.
