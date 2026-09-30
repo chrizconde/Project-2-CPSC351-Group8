@@ -4,15 +4,22 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <sys/time.h> //has timeval needed later
+#include <sys/wait.h>
+#include <errno.h>
 
 
 int main(int argc, char *argv[]) {
     //command line arguments, make sure one was given
-
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s <command> [args...]\n", argv[0]);
+        return 1;
+    }
 
     //creates shared memory region
-    const char *shm_time = "/start_time_shm";
-    int sharedMem = shm_open(shm_time, O_CREAT | O_RDWR, 0600);
+    
+    char shm_time[64];
+    snprintf(shm_time, sizeof(shm_time), "/start_time_shm_%ld", (long)getpid());
+    int sharedMem = shm_open(shm_time, O_CREAT | O_EXCL | O_RDWR, 0600);
 
     //check if it's actually open
     if (sharedMem == -1) {
@@ -48,15 +55,44 @@ int main(int argc, char *argv[]) {
     }
 
     //fork(), create child process
+    // The mapping stays usable after its file descriptor is closed.
+    close(sharedMem);
+    pid_t child = fork();
+    if (child == -1) {
+        perror("fork");
+        munmap(start_time, sizeof(*start_time));
+        shm_unlink(shm_time);
+        return 1;
+    }
 
     //gettimeofday() in child process
-
     //store starting struct timeval in shared memory region
+    if (child == 0) {
+        if (gettimeofday(start_time, NULL) == -1) {
+            perror("gettimeofday");
+            _exit(1);
+        }
 
     //child uses execvp() to execute command from command line
+        execvp(argv[1], &argv[1]);
+        // A successful execvp does not return.
+        perror("execvp");
+        _exit(127);
+    }
 
     //parent waits for child to terminate
+    int status;
+    while (waitpid(child, &status, 0) == -1) {
+        if (errno == EINTR) {
+            continue;
+        }
+        perror("waitpid");
+        munmap(start_time, sizeof(*start_time));
+        shm_unlink(shm_time);
+        return 1;
+    }
 
+    // TODO: finish the timing section together.
     //parent calls gettimeofday() to get end timestamp
 
     //parent reads start time from shared memory and calculates elapsed time
@@ -64,4 +100,17 @@ int main(int argc, char *argv[]) {
     //print elapsed time in seconds, 6 digits after decimal point
 
     //clean up shared memory resource then exit
+    int cleanup_failed = 0;
+    if (munmap(start_time, sizeof(*start_time)) == -1) {
+        perror("munmap");
+        cleanup_failed = 1;
+    }
+    if (shm_unlink(shm_time) == -1) {
+        perror("shm_unlink");
+        cleanup_failed = 1;
+    }
+    if (cleanup_failed) {
+        return 1;
+    }
+    return WIFEXITED(status) ? WEXITSTATUS(status) : 1;
 }
