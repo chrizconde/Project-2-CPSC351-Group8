@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <fcntl.h>
-#include <sys/time.h> //has timeval needed later
+#include <sys/time.h>
 #include <sys/wait.h>
 #include <errno.h>
 
@@ -92,12 +92,23 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // TODO: finish the timing section together.
     //parent calls gettimeofday() to get end timestamp
+    struct timeval end_time;
+    if (gettimeofday(&end_time, NULL) == -1){
+        perror("gettimeofday");
+        munmap(start_time, sizeof(struct timeval));
+        close(sharedMem);
+        shm_unlink(shm_time);
+        return 1;
+    }
 
-    //parent reads start time from shared memory and calculates elapsed time
+    //calculates elapsed time
+    double startInSeconds = start_time->tv_sec + start_time->tv_usec / 1000000.0;
+    double endInSeconds = end_time.tv_sec + end_time.tv_usec / 1000000.0;
+    double elapsedTime = endInSeconds - startInSeconds;
 
     //print elapsed time in seconds, 6 digits after decimal point
+    printf("Elapsed Time: %.6f seconds\n", elapsedTime);
 
     //clean up shared memory resource then exit
     int cleanup_failed = 0;
