@@ -8,7 +8,7 @@
 #include <sys/wait.h>
 
 
-static void child_process(int fd[2], char *argv[]) 
+static void child_process(int fd[2], char *argv[])
 {
     struct timeval start;
 
@@ -23,7 +23,7 @@ static void child_process(int fd[2], char *argv[])
     }
 
     // Write the starting struct timeval to the pipe
-    if (write(fd[1], &start, sizeof(start)) != (ssize_t)sizeof(start)) 
+    if (write(fd[1], &start, sizeof(start)) != (ssize_t)sizeof(start))
     {
         perror("write");
         close(fd[1]);
@@ -33,7 +33,7 @@ static void child_process(int fd[2], char *argv[])
     close(fd[1]); // Close the write end of the pipe now that we are done with it
 
     // The child uses execvp() to execute the command given on the command line. execvp only returns if it fails
-    execvp(argv[1], &argv[1]); 
+    execvp(argv[1], &argv[1]);
     fprintf(stderr, "execvp failed: %s\n", strerror(errno));
     _exit(127);
 }
@@ -43,7 +43,7 @@ static int parent_process(int fd[2], pid_t pid)
 {
     struct timeval start;
     struct timeval end;
-    
+
     // Parent does not write
     close(fd[1]);
 
@@ -60,7 +60,7 @@ static int parent_process(int fd[2], pid_t pid)
     // Read the pipe, get time
     ssize_t bytes_read = read(
             fd[0],
-            &start;
+            &start,
             sizeof(struct timeval)
     );
 
@@ -69,19 +69,19 @@ static int parent_process(int fd[2], pid_t pid)
 
     // Add whole + fractional seconds to output recorded time
     double starttime =
-        start_time.tv_sec + start_time.tv_usec / 1000000.0;
+        start.tv_sec + start.tv_usec / 1000000.0;
 
     double endtime =
-        end_time.tv_sec + end_time.tv_usec / 1000000.0;
+        end.tv_sec + end.tv_usec / 1000000.0;
 
     double elapsedtime = endtime - starttime;
 
-    printf("Elapsed time: %.6f seconds.", elapsedtime);
+    printf("Elapsed time: %.6f seconds.\n", elapsedtime);
 
-    read(fd[0], &start, size_of(struct timeval));
+    read(fd[0], &start, sizeof(struct timeval));
 }
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
     int fd[2]; // fd[0] is for reading, fd[1] is for writing
     pid_t pid;
@@ -111,6 +111,6 @@ int main(int argc, char *argv[])
 
     if (pid == 0)
         child_process(fd, argv); // Child process
-    
+
     return parent_process(fd, pid); // Parent process
 }
