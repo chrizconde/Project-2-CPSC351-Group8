@@ -41,7 +41,44 @@ static void child_process(int fd[2], char *argv[])
 // TODO Parent Process
 static int parent_process(int fd[2], pid_t pid)
 {
-    ; 
+    struct timeval start;
+    struct timeval end;
+    
+    // Parent does not write
+    close(fd[1]);
+
+    // Wait for child to finish
+    waitpid(pid, NULL, 0);
+
+    // Record Time
+    if (gettimeofday(&end, NULL) == -1)
+    {
+        perror("gettimeofday");
+        return 1;
+    }
+
+    // Read the pipe, get time
+    ssize_t bytes_read = read(
+            fd[0],
+            &start;
+            sizeof(struct timeval)
+    );
+
+    // Close the read-end of pipe
+    close(fd[0]);
+
+    // Add whole + fractional seconds to output recorded time
+    double starttime =
+        start_time.tv_sec + start_time.tv_usec / 1000000.0;
+
+    double endtime =
+        end_time.tv_sec + end_time.tv_usec / 1000000.0;
+
+    double elapsedtime = endtime - starttime;
+
+    printf("Elapsed time: %.6f seconds.", elapsedtime);
+
+    read(fd[0], &start, size_of(struct timeval));
 }
 
 int main(int argc, char *argv[]) 
