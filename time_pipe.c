@@ -38,23 +38,31 @@ static void child_process(int fd[2], char *argv[])
     _exit(127);
 }
 
-// TODO Parent Process
 static int parent_process(int fd[2], pid_t pid)
 {
     struct timeval start;
     struct timeval end;
+    int status;
 
     // Parent does not write
     close(fd[1]);
 
-    // Wait for child to finish
-    waitpid(pid, NULL, 0);
+    // Wait for child to finish, CORRECTION: retrying if wait interrupted by a signal @ee
+    while (waitpid(pid, &status, 0) == -1)
+    {
+        if (errno == EINTR)
+            continue;
+        perror("waitpid");
+        close(fd[0]);
+        return EXIT_FAILURE;
+    }
 
     // Record Time
     if (gettimeofday(&end, NULL) == -1)
     {
         perror("gettimeofday");
-        return 1;
+        close(fd[0]);
+        return EXIT_FAILURE;
     }
 
     // Read the pipe, get time
@@ -67,6 +75,17 @@ static int parent_process(int fd[2], pid_t pid)
     // Close the read-end of pipe
     close(fd[0]);
 
+    // CORRECTION: child must send complete timestamp through pipe @ee
+    if (bytes_read != (ssize_t)sizeof(struct timeval))
+    {
+        if (bytes_read == -1)
+            perror("read");
+        else
+            fprintf(stderr, "read: incomplete start timestamp (%zd of %zu bytes)\n",
+                    bytes_read, sizeof(struct timeval));
+        return EXIT_FAILURE;
+    }
+
     // Add whole + fractional seconds to output recorded time
     double starttime =
         start.tv_sec + start.tv_usec / 1000000.0;
@@ -76,9 +95,10 @@ static int parent_process(int fd[2], pid_t pid)
 
     double elapsedtime = endtime - starttime;
 
-    printf("Elapsed time: %.6f seconds.\n", elapsedtime);
+    printf("Elapsed time: %.6f seconds\n", elapsedtime);
 
-    read(fd[0], &start, sizeof(struct timeval));
+    // pass command's exit status back to the shell @ee
+    return WIFEXITED(status) ? WEXITSTATUS(status) : EXIT_FAILURE;
 }
 
 int main(int argc, char *argv[])

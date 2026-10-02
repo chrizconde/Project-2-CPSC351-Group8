@@ -97,7 +97,6 @@ int main(int argc, char *argv[]) {
     if (gettimeofday(&end_time, NULL) == -1){
         perror("gettimeofday");
         munmap(start_time, sizeof(struct timeval));
-        close(sharedMem);
         shm_unlink(shm_time);
         return 1;
     }
@@ -108,7 +107,7 @@ int main(int argc, char *argv[]) {
     double elapsedTime = endInSeconds - startInSeconds;
 
     //print elapsed time in seconds, 6 digits after decimal point
-    printf("Elapsed Time: %.6f seconds\n", elapsedTime);
+    printf("Elapsed time: %.6f seconds\n", elapsedTime);
 
     //clean up shared memory resource then exit
     int cleanup_failed = 0;

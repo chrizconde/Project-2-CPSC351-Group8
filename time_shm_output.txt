@@ -1,0 +1,29 @@
+$ ./time ls
+README.md
+directions.md
+testing
+time
+time_pipe.c
+time_pipe_output.txt
+time_shm.c
+time_shm_output.txt
+Elapsed time: 0.003898 seconds
+
+$ ./time ls -l
+total 36
+-rwxrwxrwx 1 eerbe eerbe    34 Oct  1 19:23 README.md
+-rwxrwxrwx 1 eerbe eerbe  8056 Oct  1 19:37 directions.md
+drwxrwxrwx 1 eerbe eerbe  4096 Oct  1 23:21 testing
+-rwxrwxrwx 1 eerbe eerbe 16752 Oct  1  2026 time
+-rwxrwxrwx 1 eerbe eerbe  3537 Oct  1 23:43 time_pipe.c
+-rwxrwxrwx 1 eerbe eerbe     0 Oct  1 19:23 time_pipe_output.txt
+-rwxrwxrwx 1 eerbe eerbe  3575 Oct  1 23:43 time_shm.c
+-rwxrwxrwx 1 eerbe eerbe   160 Oct  1  2026 time_shm_output.txt
+Elapsed time: 0.028960 seconds
+
+$ ./time pwd
+/mnt/c/Projects/Project-2-CPSC351-Group8
+Elapsed time: 0.003059 seconds
+
+$ ./time sleep 1
+Elapsed time: 1.003350 seconds
